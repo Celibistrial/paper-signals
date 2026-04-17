@@ -6,10 +6,7 @@ import PaperCard from '@/components/PaperCard';
 import StockSearch from '@/components/StockSearch';
 import IndexCard from '@/components/IndexCard';
 import SectorArchive from '@/components/SectorArchive';
-import { getStockQuote, searchStocks } from '@/lib/stocks';
-
-
-const TRENDING_SYMBOLS = ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ICICIBANK.NS'];
+import { getStockQuote, getTrendingSymbols, searchStocks } from '@/lib/stocks';
 
 async function MarketIndices() {
   const [nifty, sensex] = await Promise.all([
@@ -55,8 +52,9 @@ async function MarketIndices() {
 }
 
 async function TrendingStocks() {
+  const trendingSymbols = await getTrendingSymbols();
   const stocks = await Promise.all(
-    TRENDING_SYMBOLS.map(async (symbol) => {
+    trendingSymbols.map(async (symbol) => {
       const quote = await getStockQuote(symbol);
       return quote;
     })
@@ -151,7 +149,22 @@ export default async function Home({
       <div className="space-y-12">
         {!q ? (
           <>
-            <Suspense fallback={<div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 h-48 bg-paper-dark/20 animate-pulse rounded-lg" />}>
+            <Suspense fallback={
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-48 paper-card rough-edge bg-paper-dark/20 animate-pulse border-2 border-ink/5 flex flex-col justify-between p-6">
+                    <div className="flex justify-between items-start">
+                      <div className="h-8 w-32 bg-ink/5 rounded" />
+                      <div className="h-6 w-6 bg-ink/5 rounded-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-10 w-48 bg-ink/5 rounded" />
+                      <div className="h-4 w-24 bg-ink/5 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            }>
               <MarketIndices />
             </Suspense>
 
@@ -161,16 +174,41 @@ export default async function Home({
               <Book className="w-5 h-5 text-ink/60" />
               <h2 className="font-serif text-2xl italic">Daily Market Record</h2>
             </div>
-            <Suspense fallback={<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-48 bg-paper-dark/50 animate-pulse rough-edge" />
-              ))}
-            </div>}>
+            <Suspense fallback={
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-48 paper-card rough-edge bg-paper-dark/10 animate-pulse border-2 border-ink/5 p-6 space-y-4">
+                    <div className="flex justify-between">
+                      <div className="h-6 w-24 bg-ink/5 rounded" />
+                      <div className="h-6 w-6 bg-ink/5 rounded" />
+                    </div>
+                    <div className="h-10 w-32 bg-ink/5 rounded" />
+                    <div className="pt-4 border-t border-ink/5 flex justify-between">
+                      <div className="h-3 w-16 bg-ink/5 rounded" />
+                      <div className="h-3 w-16 bg-ink/5 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            }>
               <TrendingStocks />
             </Suspense>
           </>
         ) : (
-          <Suspense fallback={<div className="h-96 bg-paper-dark/50 animate-pulse rough-edge" />}>
+          <Suspense fallback={
+            <div className="space-y-6">
+              <div className="h-10 w-64 bg-ink/5 animate-pulse rounded border-b-2 border-ink/10" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-40 paper-card rough-edge bg-paper-dark/10 animate-pulse border-2 border-ink/5 p-6 space-y-4">
+                    <div className="h-6 w-32 bg-ink/5 rounded" />
+                    <div className="h-4 w-24 bg-ink/5 rounded" />
+                    <div className="h-8 w-24 bg-ink/5 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          }>
             <SearchResults query={q} />
           </Suspense>
         )}
