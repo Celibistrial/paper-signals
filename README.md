@@ -1,6 +1,6 @@
-# 📜 Paper Stocks | Stock Market Archives
+# 📜 PaperSignals | Stock Market Archives
 
-A high-performance, professional stock market analyzer for the Indian Market (NSE & BSE) built with a unique "Paper & Parchment" aesthetic. This project bridges the gap between historical aesthetics and modern technical analysis.
+A high-performance, professional stock market analyzer for the Indian Market (NSE & BSE) built with a unique aesthetic. This project bridges the gap between historical aesthetics and modern technical analysis.
 
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=for-the-badge&logo=tailwind-css)
@@ -9,20 +9,20 @@ A high-performance, professional stock market analyzer for the Indian Market (NS
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🏛️ The Aesthetic
+### The Aesthetic
 - **Parchment UI:** Custom-themed off-white textures, rough-cut paper edges (`clip-path`), and noise overlays.
 - **Ink Typography:** Sophisticated pairing of **EB Garamond** (Serif) for headings and **JetBrains Mono** for financial data.
 - **Physical Animations:** Staggered card entries that mimic papers being dealt onto a table, and 3D flipping index cards.
 
-### 📊 Professional Analysis
+### Professional Analysis
 - **Advanced Charting:** Hand-drawn SVG line charts and **Candlestick** views with OHLC data.
 - **Technical Indicators:** "Sketched" implementations of **Moving Averages (20-day)**, **Bollinger Bands**, and **RSI (14)**.
 - **Live Fuzzy Search:** Debounced, live-updating search that prioritizes Indian exchange shorthands (e.g., "REL" → "Reliance").
 - **Deep Specimen Investigation:** A dedicated "Dive Mode" that focuses exclusively on technical price action and indicators.
 
-### 🔍 Market Coverage
+### Market Coverage
 - **NSE/BSE Support:** Real-time quotes and historical data for all major Indian equities.
 - **Market Indices:** Interactive NIFTY 50 and SENSEX cards with real-time tracking.
 - **Sector & Industry Archives:** Automatic classification of stocks into sectors (Technology, Energy, Finance, etc.) with dedicated archive pages.
@@ -30,7 +30,7 @@ A high-performance, professional stock market analyzer for the Indian Market (NS
 
 ---
 
-## 🛠️ Technical Architecture
+## Technical Architecture
 
 ### 1. Hybrid Rendering Strategy
 - **Dynamic SSR:** Utilizes Next.js `searchParams` to ensure data freshness on every request while maintaining SEO metadata.
@@ -70,13 +70,3 @@ A high-performance, professional stock market analyzer for the Indian Market (NS
 
 ---
 
-## 📖 Interview Talking Points
-
-- **Performance:** "Used Next.js 15 Streaming to prevent slow third-party financial APIs from blocking the initial page paint."
-- **Design System:** "Implemented a custom design system using Tailwind 4 CSS variables and SVG filters to achieve a tactile, physical paper feel."
-- **Architecture:** "Leveraged URL-driven state management to create a fully shareable analytical tool without the overhead of global state libraries."
-- **Resilience:** "Engineered a multi-layered fallback strategy to handle the volatility of unofficial third-party data sources."
-
----
-
-*Recorded in the Archives • 2026*

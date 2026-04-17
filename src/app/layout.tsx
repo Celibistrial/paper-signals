@@ -18,8 +18,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Paper Stocks",
-    default: "Paper Stocks | NSE & BSE Tracker",
+    template: "%s | PaperSignals",
+    default: "PaperSignals | NSE & BSE Tracker",
   },
   description: "A paper-themed stock tracker for the Indian market.",
 };
@@ -41,7 +41,7 @@ export default function RootLayout({
               <div className="p-2 bg-ink text-paper-light rounded group-hover:rotate-3 transition-transform">
                 <BookOpen className="w-5 h-5" />
               </div>
-              <span className="font-serif font-bold italic tracking-tight">Paper Stocks</span>
+              <span className="font-serif font-bold italic tracking-tight">PaperSignals</span>
             </Link>
           </div>
         </header>

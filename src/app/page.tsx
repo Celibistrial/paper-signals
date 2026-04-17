@@ -141,7 +141,7 @@ export default async function Home({
     <main className="flex-1 container mx-auto px-4 py-12">
       <div className="flex flex-col items-center mb-16 space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-6xl font-serif font-bold tracking-tight">Paper Stocks</h1>
+          <h1 className="text-6xl font-serif font-bold tracking-tight">PaperSignals</h1>
           <p className="text-xl font-serif italic text-ink/60">A curated ledger of the Indian Market</p>
         </div>
         
