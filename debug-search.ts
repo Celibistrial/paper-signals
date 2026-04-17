@@ -8,7 +8,7 @@ async function debug() {
   try {
     const result = await yahooFinance.quote(query);
     console.log('Quote:', { symbol: result.symbol, name: result.shortName });
-  } catch (e) {
+  } catch {
     console.log('Not found');
   }
 }

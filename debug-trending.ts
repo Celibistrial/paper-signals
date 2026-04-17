@@ -1,5 +1,10 @@
 import YahooFinance from 'yahoo-finance2';
 
+type DebugError = {
+  message?: string;
+  result?: unknown;
+};
+
 const yahooFinance = new YahooFinance({
   validation: {
     logErrors: true // Enable for debugging
@@ -12,7 +17,7 @@ async function debug() {
     const usResult = await yahooFinance.trendingSymbols('US');
     console.log('US Success! Found:', usResult.quotes.length, 'symbols');
     console.log('First 3 US Symbols:', usResult.quotes.slice(0, 3).map(q => q.symbol));
-  } catch (e) {
+  } catch {
     console.log('US Failed');
   }
 
@@ -22,11 +27,12 @@ async function debug() {
     const inResult = await yahooFinance.trendingSymbols('IN');
     console.log('IN Success! Found:', inResult.quotes.length, 'symbols');
     console.log('First 3 IN Symbols:', inResult.quotes.slice(0, 3).map(q => q.symbol));
-  } catch (e: any) {
-    console.log('IN Failed with message:', e.message);
+  } catch (error: unknown) {
+    const typedError = error as DebugError;
+    console.log('IN Failed with message:', typedError.message);
     // If it's a validation error, the raw result is often in the error object
-    if (e.result) {
-      console.log('Raw result from IN:', e.result);
+    if (typedError.result) {
+      console.log('Raw result from IN:', typedError.result);
     }
   }
 }

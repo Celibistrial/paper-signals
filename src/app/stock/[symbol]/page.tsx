@@ -1,12 +1,19 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, ArrowDownRight, Calendar, Globe, Landmark, Newspaper, FileText, Activity, Microscope, X, CandlestickChart, LineChart } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowDownRight, Calendar, Landmark, Newspaper, FileText, Activity, Microscope, X, CandlestickChart, LineChart } from 'lucide-react';
 import { getStockQuote, getStockHistory, getStockNews } from '@/lib/stocks';
 import PaperCard from '@/components/PaperCard';
 import SimpleChart from '@/components/SimpleChart';
 import TimeframeSelector from '@/components/TimeframeSelector';
 import SectorIndustryList from '@/components/SectorIndustryList';
 import { formatDistanceToNow } from 'date-fns';
+
+type NewsArticle = {
+  publisher: string;
+  time: string | number | Date;
+  title: string;
+  link: string;
+};
 
 export async function generateMetadata({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
@@ -82,9 +89,15 @@ export default async function StockPage({
           </div>
         </div>
         <PaperCard hover={false} className="p-12 min-h-[70vh] flex flex-col justify-center">
-          <div className="flex justify-between items-end mb-12 border-b border-ink/5 pb-8">
-            <div><h1 className="text-5xl md:text-6xl font-serif font-bold tracking-tight mb-2">{quote.name}</h1><p className="text-2xl text-ink/40 font-mono tracking-widest">{quote.symbol} • {rangeLabel} ANALYSIS</p></div>
-            <div className="text-right"><div className="text-7xl font-mono font-bold tracking-tighter">₹{quote.price?.toLocaleString('en-IN')}</div><div className={`text-3xl font-mono ${isUp ? 'text-green-800' : 'text-red-800'}`}>{isUp ? '+' : ''}{quote.change?.toFixed(2)} ({quote.changePercent?.toFixed(2)}%)</div></div>
+          <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end mb-12 border-b border-ink/5 pb-8">
+            <div className="min-w-0">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold tracking-tight mb-2 break-words">{quote.name}</h1>
+              <p className="text-lg md:text-2xl text-ink/40 font-mono tracking-widest break-words">{quote.symbol} • {rangeLabel} ANALYSIS</p>
+            </div>
+            <div className="text-left md:text-right md:justify-self-end shrink-0">
+              <div className="text-5xl md:text-6xl lg:text-7xl font-mono font-bold tracking-tighter whitespace-nowrap">₹{quote.price?.toLocaleString('en-IN')}</div>
+              <div className={`text-2xl md:text-3xl font-mono ${isUp ? 'text-green-800' : 'text-red-800'}`}>{isUp ? '+' : ''}{quote.change?.toFixed(2)} ({quote.changePercent?.toFixed(2)}%)</div>
+            </div>
           </div>
           <div className="flex-1"><SimpleChart data={history} color={isUp ? '#166534' : '#991b1b'} indicators={chartIndicators} viewMode={currentView} /></div>
           <div className="mt-12 flex justify-between items-center"><TimeframeSelector /><div className="text-[10px] font-mono uppercase text-ink/20 tracking-[0.5em]">Deep Specimen Investigation</div></div>
@@ -103,13 +116,13 @@ export default async function StockPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-12">
           <PaperCard hover={false} className="p-10">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-12">
-              <div>
+            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end mb-12">
+              <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-2"><span className="text-xs uppercase tracking-widest px-2 py-0.5 bg-ink/5 border border-ink/10 rounded font-mono">{quote.exchange}</span><span className="text-xs italic text-ink/40 font-serif">Market State: {quote.marketState}</span></div>
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold tracking-tight break-words max-w-[15ch] md:max-w-none">{quote.name}</h1>
-                <p className="text-base md:text-lg text-ink/60 font-mono mt-1">{quote.symbol}</p>
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold tracking-tight break-words">{quote.name}</h1>
+                <p className="text-base md:text-lg text-ink/60 font-mono mt-1 break-words">{quote.symbol}</p>
               </div>
-              <div className="text-left md:text-right flex flex-col items-start md:items-end">
+              <div className="text-left md:text-right flex flex-col items-start md:items-end md:justify-self-end shrink-0">
                 <div className="text-4xl md:text-5xl lg:text-6xl font-bold font-mono tracking-tighter whitespace-nowrap">₹{quote.price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
                 <div className={`flex items-center gap-1 text-2xl font-mono ${isUp ? 'text-green-800' : 'text-red-800'}`}>{isUp ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownRight className="w-6 h-6" />}<span>{quote.change?.toFixed(2)} ({quote.changePercent?.toFixed(2)}%)</span></div>
               </div>
@@ -135,7 +148,7 @@ export default async function StockPage({
           <div className="space-y-6">
             <h3 className="font-serif text-2xl italic flex items-center gap-2 border-b-2 border-ink/10 pb-2"><Newspaper className="w-5 h-5" /> Recent Dispatches</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {news.length > 0 ? news.map((article: any, i: number) => (
+              {news.length > 0 ? news.map((article: NewsArticle, i: number) => (
                 <PaperCard key={i} delay={0.2 + i * 0.1} className="h-full group">
                   <div className="flex flex-col h-full">
                     <div className="text-[10px] font-mono uppercase tracking-widest text-ink/40 mb-2">{article.publisher} • {formatDistanceToNow(new Date(article.time), { addSuffix: true })}</div>

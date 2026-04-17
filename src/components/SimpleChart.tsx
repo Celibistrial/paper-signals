@@ -16,6 +16,28 @@ interface SimpleChartProps {
   viewMode?: 'line' | 'candle';
 }
 
+function getRollingStats(
+  data: SimpleChartProps['data'],
+  index: number,
+  maxPeriod = 20
+) {
+  const windowStart = Math.max(0, index - (maxPeriod - 1));
+  const window = data.slice(windowStart, index + 1);
+  const validCloses = window
+    .map((entry) => entry.close)
+    .filter((close) => typeof close === 'number' && !isNaN(close));
+
+  if (validCloses.length === 0) return null;
+
+  const mean = validCloses.reduce((sum, curr) => sum + curr, 0) / validCloses.length;
+  const variance = validCloses.reduce((sum, curr) => sum + Math.pow(curr - mean, 2), 0) / validCloses.length;
+
+  return {
+    mean,
+    stdDev: Math.sqrt(variance),
+  };
+}
+
 export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewMode = 'line' }: SimpleChartProps) {
   const [hoverData, setHoverData] = useState<{ x: number; y: number; price: number; date: Date; ma?: number; bbUpper?: number; bbLower?: number; rsi?: number; open?: number; high?: number; low?: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -25,11 +47,6 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
   const indicatorHeight = indicators.rsi ? 100 : 0;
   const totalHeight = mainHeight + indicatorHeight + (indicators.rsi ? 20 : 0);
 
-  const minPrice = data && data.length > 0 ? Math.min(...data.map(d => d.low ?? d.close)) : 0;
-  const maxPrice = data && data.length > 0 ? Math.max(...data.map(d => d.high ?? d.close)) : 0;
-  const range = maxPrice - minPrice;
-  const paddingY = range === 0 ? 10 : range * 0.15;
-
   const calculateRSI = (period = 14) => {
     if (!data || data.length <= period) return [];
     let gains = 0, losses = 0;
@@ -37,7 +54,7 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
       const diff = data[i].close - (data[i - 1]?.close || 0);
       if (diff >= 0) gains += diff; else losses -= diff;
     }
-    const rsi = [null as any];
+    const rsi: Array<number | undefined> = [undefined];
     let avgGain = gains / period;
     let avgLoss = losses / period;
     for (let i = period + 1; i < data.length; i++) {
@@ -52,6 +69,40 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
 
   const rsiValues = calculateRSI();
 
+  const priceBounds = useMemo(() => {
+    if (!data || data.length === 0) {
+      return { minPrice: 0, maxPrice: 0, range: 0, paddingY: 10 };
+    }
+
+    const plottedValues = data.flatMap((d, i) => {
+      const values = [d.low ?? d.close, d.high ?? d.close, d.close];
+
+      const stats = getRollingStats(data, i);
+      if (stats) {
+        values.push(stats.mean);
+
+        if (indicators.bb) {
+          values.push(stats.mean + stats.stdDev * 2, stats.mean - stats.stdDev * 2);
+        }
+      }
+
+      return values;
+    });
+
+    const minPrice = Math.min(...plottedValues);
+    const maxPrice = Math.max(...plottedValues);
+    const range = maxPrice - minPrice;
+
+    return {
+      minPrice,
+      maxPrice,
+      range,
+      paddingY: range === 0 ? 10 : range * 0.15,
+    };
+  }, [data, indicators.bb]);
+
+  const { minPrice, range, paddingY } = priceBounds;
+
   const points = useMemo(() => {
     if (!data || data.length === 0) return [];
     return data.map((d, i) => {
@@ -59,25 +110,19 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
       const y = mainHeight - ((d.close - (minPrice - paddingY)) / (range + paddingY * 2)) * mainHeight;
       
       let maValue, bbUpper, bbLower;
-      
-      if (i >= 19) {
-        const window = data.slice(i - 19, i + 1);
-        const validCloses = window.map(w => w.close).filter(c => typeof c === 'number' && !isNaN(c));
-        
-        if (validCloses.length === 20) {
-          const mean = validCloses.reduce((sum, curr) => sum + curr, 0) / 20;
-          if (indicators.ma) maValue = mean;
-          
-          if (indicators.bb) {
-            const stdDev = Math.sqrt(validCloses.reduce((sum, curr) => sum + Math.pow(curr - mean, 2), 0) / 20);
-            bbUpper = mean + stdDev * 2;
-            bbLower = mean - stdDev * 2;
-          }
+
+      const stats = getRollingStats(data, i);
+      if (stats) {
+        if (indicators.ma) maValue = stats.mean;
+
+        if (indicators.bb) {
+          bbUpper = stats.mean + stats.stdDev * 2;
+          bbLower = stats.mean - stats.stdDev * 2;
         }
       }
       return { x, y, price: d.close, open: d.open, high: d.high, low: d.low, date: d.date, maValue, bbUpper, bbLower, vol: d.volume, rsi: rsiValues[i] };
     });
-  }, [data, indicators.ma, indicators.bb, minPrice, maxPrice, range, paddingY, rsiValues]);
+  }, [data, indicators.ma, indicators.bb, minPrice, range, paddingY, rsiValues]);
 
   if (!data || data.length === 0) return (
     <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-ink/10 font-serif italic text-ink/40">
@@ -91,6 +136,28 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
       const vY = mainHeight - ((vals[i]! - (minPrice - paddingY)) / (range + paddingY * 2)) * mainHeight;
       return `${p.x},${vY}`;
     }).filter(p => p !== null).join(' ');
+  };
+
+  const getBandArea = () => {
+    const upperPoints = points
+      .map((p) => {
+        if (p.bbUpper === undefined) return null;
+        const y = mainHeight - ((p.bbUpper - (minPrice - paddingY)) / (range + paddingY * 2)) * mainHeight;
+        return `${p.x},${y}`;
+      })
+      .filter((point): point is string => point !== null);
+
+    const lowerPoints = points
+      .map((p) => {
+        if (p.bbLower === undefined) return null;
+        const y = mainHeight - ((p.bbLower - (minPrice - paddingY)) / (range + paddingY * 2)) * mainHeight;
+        return `${p.x},${y}`;
+      })
+      .filter((point): point is string => point !== null)
+      .reverse();
+
+    if (upperPoints.length === 0 || lowerPoints.length === 0) return '';
+    return [...upperPoints, ...lowerPoints].join(' ');
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -109,8 +176,17 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
   const maxVol = Math.max(...data.map(d => d.volume || 0));
 
   return (
-    <div className="w-full relative group">
-      <svg ref={svgRef} viewBox={`0 0 ${width} ${totalHeight}`} className="w-full h-auto overflow-visible cursor-crosshair" preserveAspectRatio="none" onMouseMove={handleMouseMove} onMouseLeave={() => setHoverData(null)}>
+    <div className="w-full relative group" style={{ aspectRatio: `${width} / ${totalHeight}` }}>
+      <svg 
+        ref={svgRef} 
+        viewBox={`0 0 ${width} ${totalHeight}`} 
+        width={width}
+        height={totalHeight}
+        className="w-full h-auto overflow-visible cursor-crosshair" 
+        preserveAspectRatio="none" 
+        onMouseMove={handleMouseMove} 
+        onMouseLeave={() => setHoverData(null)}
+      >
         {/* Main Chart Area */}
         <rect x="0" y="0" width={width} height={mainHeight} fill="transparent" />
         {[0, 1, 2, 3, 4].map((i) => (
@@ -123,7 +199,13 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
         ))}
 
         {/* Technicals */}
-        {indicators.bb && <><motion.polyline fill="none" stroke="#4a4a4a" strokeWidth="1" strokeDasharray="1 4" points={getPath(points.map(p => p.bbUpper))} opacity={0.2} /><motion.polyline fill="none" stroke="#4a4a4a" strokeWidth="1" strokeDasharray="1 4" points={getPath(points.map(p => p.bbLower))} opacity={0.2} /></>}
+        {indicators.bb && (
+          <>
+            <polygon points={getBandArea()} fill="#9ca3af" opacity="0.12" />
+            <motion.polyline fill="none" stroke="#6b7280" strokeWidth="1.75" strokeDasharray="4 4" points={getPath(points.map(p => p.bbUpper))} opacity={0.8} />
+            <motion.polyline fill="none" stroke="#6b7280" strokeWidth="1.75" strokeDasharray="4 4" points={getPath(points.map(p => p.bbLower))} opacity={0.8} />
+          </>
+        )}
         {indicators.ma && <motion.polyline fill="none" stroke="#1a1a1a" strokeWidth="1.5" strokeDasharray="2 2" points={getPath(points.map(p => p.maValue))} opacity={0.4} />}
 
         {/* Price Action */}
@@ -167,10 +249,12 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
       {hoverData && (
         <div className="absolute z-20 pointer-events-none bg-paper-dark border-2 border-ink shadow-paper p-3 font-mono text-xs" style={{ left: `${(hoverData.x / width) * 100}%`, top: `${(hoverData.y / totalHeight) * 100}%`, transform: `translate(${hoverData.x > width / 2 ? '-110%' : '10%'}, -110%)` }}>
           <div className="font-bold text-sm">₹{hoverData.price.toLocaleString('en-IN')}</div>
-          {hoverData.open && <div className="text-[9px] opacity-60">O: ₹{hoverData.open.toFixed(2)} H: ₹{hoverData.high?.toFixed(2)} L: ₹{hoverData.low?.toFixed(2)}</div>}
+          {hoverData.open !== undefined && <div className="text-[9px] opacity-60">O: ₹{hoverData.open.toFixed(2)} H: ₹{hoverData.high?.toFixed(2)} L: ₹{hoverData.low?.toFixed(2)}</div>}
           <div className="text-[10px] opacity-60 mb-1">{format(hoverData.date, 'MMM dd, yyyy')}</div>
-          {hoverData.ma && <div className="text-[9px] text-ink/50">MA(20): ₹{hoverData.ma.toFixed(2)}</div>}
-          {hoverData.rsi && <div className="text-[9px] text-purple-800">RSI: {hoverData.rsi.toFixed(2)}</div>}
+          {hoverData.ma !== undefined && <div className="text-[9px] text-ink/50">MA(20): ₹{hoverData.ma.toFixed(2)}</div>}
+          {hoverData.bbUpper !== undefined && <div className="text-[9px] text-ink/60">BB Upper: ₹{hoverData.bbUpper.toFixed(2)}</div>}
+          {hoverData.bbLower !== undefined && <div className="text-[9px] text-ink/60">BB Lower: ₹{hoverData.bbLower.toFixed(2)}</div>}
+          {hoverData.rsi !== undefined && <div className="text-[9px] text-purple-800">RSI: {hoverData.rsi.toFixed(2)}</div>}
         </div>
       )}
     </div>

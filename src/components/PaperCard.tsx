@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -17,14 +16,12 @@ interface PaperCardProps {
 }
 
 export default function PaperCard({ children, className, delay = 0, hover = true }: PaperCardProps) {
-  const [rotation, setRotation] = useState(0);
-
-  useEffect(() => {
-    setRotation((Math.random() - 0.5) * 1.5);
-  }, []);
+  const classSeed = className?.length || 0;
+  const rotation = (((delay * 1000) + classSeed) % 7) * 0.25 - 0.75;
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 20, rotate: rotation + 5 }}
       animate={{ opacity: 1, y: 0, rotate: rotation }}
       transition={{ 
