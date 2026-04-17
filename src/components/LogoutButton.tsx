@@ -25,7 +25,7 @@ export default function LogoutButton() {
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
               exit={{ scale: 0.9, opacity: 0, rotate: 2 }}
               className="relative w-full max-w-sm bg-paper-yellow p-8 shadow-2xl rough-edge border-2 border-yellow-600/20 text-ink"
-              style={{ backgroundImage: 'url("https:
+              style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/paper.png")' }}
             >
               <button 
                 onClick={() => setShowConfirm(false)}

@@ -20,7 +20,6 @@ export default function PaperCard({ children, className, delay = 0, hover = true
   const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
-    
     setRotation((Math.random() - 0.5) * 1.5);
   }, []);
 

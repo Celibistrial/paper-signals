@@ -20,34 +20,28 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
   const [hoverData, setHoverData] = useState<{ x: number; y: number; price: number; date: Date; ma?: number; bbUpper?: number; bbLower?: number; rsi?: number; open?: number; high?: number; low?: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  if (!data || data.length === 0) return (
-    <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-ink/10 font-serif italic text-ink/40">
-      No historical records for this period.
-    </div>
-  );
-
   const width = 800;
   const mainHeight = 400;
   const indicatorHeight = indicators.rsi ? 100 : 0;
   const totalHeight = mainHeight + indicatorHeight + (indicators.rsi ? 20 : 0);
 
-  const minPrice = Math.min(...data.map(d => d.low ?? d.close));
-  const maxPrice = Math.max(...data.map(d => d.high ?? d.close));
+  const minPrice = data && data.length > 0 ? Math.min(...data.map(d => d.low ?? d.close)) : 0;
+  const maxPrice = data && data.length > 0 ? Math.max(...data.map(d => d.high ?? d.close)) : 0;
   const range = maxPrice - minPrice;
   const paddingY = range === 0 ? 10 : range * 0.15;
 
   const calculateRSI = (period = 14) => {
-    if (data.length <= period) return [];
+    if (!data || data.length <= period) return [];
     let gains = 0, losses = 0;
     for (let i = 1; i <= period; i++) {
-      const diff = data[i].close - data[i - 1].close;
+      const diff = data[i].close - (data[i - 1]?.close || 0);
       if (diff >= 0) gains += diff; else losses -= diff;
     }
     const rsi = [null as any];
     let avgGain = gains / period;
     let avgLoss = losses / period;
     for (let i = period + 1; i < data.length; i++) {
-      const diff = data[i].close - data[i - 1].close;
+      const diff = data[i].close - (data[i - 1]?.close || 0);
       avgGain = (avgGain * (period - 1) + (diff > 0 ? diff : 0)) / period;
       avgLoss = (avgLoss * (period - 1) + (diff < 0 ? -diff : 0)) / period;
       const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
@@ -58,29 +52,38 @@ export default function SimpleChart({ data, color = '#1a1a1a', indicators, viewM
 
   const rsiValues = calculateRSI();
 
-  const points = useMemo(() => data.map((d, i) => {
-    const x = (i / (data.length - 1)) * width;
-    const y = mainHeight - ((d.close - (minPrice - paddingY)) / (range + paddingY * 2)) * mainHeight;
-    
-    let maValue, bbUpper, bbLower;
-    
-    if (i >= 19) {
-      const window = data.slice(i - 19, i + 1);
-      const validCloses = window.map(w => w.close).filter(c => typeof c === 'number' && !isNaN(c));
+  const points = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    return data.map((d, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = mainHeight - ((d.close - (minPrice - paddingY)) / (range + paddingY * 2)) * mainHeight;
       
-      if (validCloses.length === 20) {
-        const mean = validCloses.reduce((sum, curr) => sum + curr, 0) / 20;
-        if (indicators.ma) maValue = mean;
+      let maValue, bbUpper, bbLower;
+      
+      if (i >= 19) {
+        const window = data.slice(i - 19, i + 1);
+        const validCloses = window.map(w => w.close).filter(c => typeof c === 'number' && !isNaN(c));
         
-        if (indicators.bb) {
-          const stdDev = Math.sqrt(validCloses.reduce((sum, curr) => sum + Math.pow(curr - mean, 2), 0) / 20);
-          bbUpper = mean + stdDev * 2;
-          bbLower = mean - stdDev * 2;
+        if (validCloses.length === 20) {
+          const mean = validCloses.reduce((sum, curr) => sum + curr, 0) / 20;
+          if (indicators.ma) maValue = mean;
+          
+          if (indicators.bb) {
+            const stdDev = Math.sqrt(validCloses.reduce((sum, curr) => sum + Math.pow(curr - mean, 2), 0) / 20);
+            bbUpper = mean + stdDev * 2;
+            bbLower = mean - stdDev * 2;
+          }
         }
       }
-    }
-    return { x, y, price: d.close, open: d.open, high: d.high, low: d.low, date: d.date, maValue, bbUpper, bbLower, vol: d.volume, rsi: rsiValues[i] };
-  }), [data, indicators.ma, indicators.bb, minPrice, maxPrice, range, paddingY, rsiValues]);
+      return { x, y, price: d.close, open: d.open, high: d.high, low: d.low, date: d.date, maValue, bbUpper, bbLower, vol: d.volume, rsi: rsiValues[i] };
+    });
+  }, [data, indicators.ma, indicators.bb, minPrice, maxPrice, range, paddingY, rsiValues]);
+
+  if (!data || data.length === 0) return (
+    <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-ink/10 font-serif italic text-ink/40">
+      No historical records for this period.
+    </div>
+  );
 
   const getPath = (vals: (number | undefined)[]) => {
     return points.map((p, i) => {

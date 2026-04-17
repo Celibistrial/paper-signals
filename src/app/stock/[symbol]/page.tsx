@@ -34,7 +34,8 @@ export default async function StockPage({
     startDate = new Date(0); interval = '1mo'; rangeLabel = 'All-Time';
   } else {
     const days = parseInt(rangeStr || '30');
-    startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const now = new Date().getTime();
+    startDate = new Date(now - days * 24 * 60 * 60 * 1000);
     rangeLabel = days >= 1825 ? '5-Year' : days >= 365 ? '1-Year' : `${days}-Day`;
     if (days >= 1825) interval = '1wk'; else if (days >= 365) interval = '1d';
   }

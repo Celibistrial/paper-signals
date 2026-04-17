@@ -103,7 +103,7 @@ export async function getStockNews(symbol: string) {
 
 export async function searchStocks(query: string) {
   try {
-    let result = await yahooFinance.search(query) as any;
+    const result = await yahooFinance.search(query) as any;
     const indianResults = (result.quotes as any[]).filter(q => q.symbol && (q.symbol.endsWith('.NS') || q.symbol.endsWith('.BO')));
     const upperQuery = query.toUpperCase();
 

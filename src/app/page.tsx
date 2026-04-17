@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { TrendingUp, ArrowUpRight, ArrowDownRight, Search, Book } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Search, Book } from 'lucide-react';
 import { clsx } from 'clsx';
 import PaperCard from '@/components/PaperCard';
 import StockSearch from '@/components/StockSearch';
@@ -106,8 +106,8 @@ async function SearchResults({ query }: { query: string }) {
     return (
       <PaperCard className="text-center py-12">
         <Search className="w-12 h-12 mx-auto mb-4 text-ink/20" />
-        <h3 className="font-serif text-2xl italic">No specimens found for "{query}"</h3>
-        <p className="text-ink/60 mt-2">Try searching for companies like "Reliance" or "Tata"</p>
+        <h3 className="font-serif text-2xl italic">No specimens found for &quot;{query}&quot;</h3>
+        <p className="text-ink/60 mt-2">Try searching for companies like &quot;Reliance&quot; or &quot;Tata&quot;</p>
       </PaperCard>
     );
   }
